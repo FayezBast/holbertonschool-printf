@@ -10,6 +10,7 @@
 int print_char(va_list args)
 {
 	char c = va_arg(args, int);
+
 	write(1, &c, 1);
 	return (1);
 }
@@ -56,16 +57,14 @@ int handle_specifier(char specifier, va_list args)
 {
 	if (specifier == 'c')
 		return (print_char(args));
-	else if (specifier == 's')
+	if (specifier == 's')
 		return (print_string(args));
-	else if (specifier == '%')
+	if (specifier == '%')
 		return (print_percent());
-	else
-	{
-		write(1, "%", 1);
-		write(1, &specifier, 1);
-		return (2);
-	}
+
+	write(1, "%", 1);
+	write(1, &specifier, 1);
+	return (2);
 }
 
 /**
@@ -109,4 +108,3 @@ int _printf(const char *format, ...)
 
 	return (count);
 }
-
