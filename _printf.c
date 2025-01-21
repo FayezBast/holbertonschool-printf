@@ -2,6 +2,50 @@
 #include <unistd.h>
 
 /**
+ * print_char - Prints a single character.
+ * @args: The argument list.
+ *
+ * Return: The number of characters printed.
+ */
+int print_char(va_list args)
+{
+	char c = va_arg(args, int);
+	write(1, &c, 1);
+	return (1);
+}
+
+/**
+ * print_string - Prints a string.
+ * @args: The argument list.
+ *
+ * Return: The number of characters printed.
+ */
+int print_string(va_list args)
+{
+	char *str = va_arg(args, char *);
+	int i;
+
+	if (!str)
+		str = "(null)";
+
+	for (i = 0; str[i] != '\0'; i++)
+		write(1, &str[i], 1);
+
+	return (i);
+}
+
+/**
+ * print_percent - Prints a percent sign.
+ *
+ * Return: The number of characters printed.
+ */
+int print_percent(void)
+{
+	write(1, "%", 1);
+	return (1);
+}
+
+/**
  * _printf - Produces output according to a format.
  * @format: A character string containing directives.
  *
@@ -30,30 +74,11 @@ int _printf(const char *format, ...)
 				return (-1); /* Invalid: single % at end */
 			}
 			if (*ptr == 'c')
-			{
-				char c = va_arg(args, int);
-
-				write(1, &c, 1);
-				count++;
-			}
+				count += print_char(args);
 			else if (*ptr == 's')
-			{
-				char *str = va_arg(args, char *);
-				int i;
-
-				if (!str)
-					str = "(null)";
-
-				for (i = 0; str[i] != '\0'; i++)
-					write(1, &str[i], 1);
-
-				count += i;
-			}
+				count += print_string(args);
 			else if (*ptr == '%')
-			{
-				write(1, "%", 1);
-				count++;
-			}
+				count += print_percent();
 			else
 			{
 				write(1, "%", 1);
