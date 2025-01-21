@@ -1,96 +1,145 @@
-/*
- * File: _printf.c
- * Auth: Brennan D Baraban
- *       Michael Klein
- */
-
-#include "holberton.h"
-
-void cleanup(va_list args, buffer_t *output);
-int run_printf(const char *format, va_list args, buffer_t *output);
-int _printf(const char *format, ...);
+#include <stdarg.h>
+#include <unistd.h>
 
 /**
- * cleanup - Peforms cleanup operations for _printf.
- * @args: A va_list of arguments provided to _printf.
- * @output: A buffer_t struct.
- */
-void cleanup(va_list args, buffer_t *output)
-{
-	va_end(args);
-	write(1, output->start, output->len);
-	free_buffer(output);
-}
-
-/**
- * run_printf - Reads through the format string for _printf.
- * @format: Character string to print - may contain directives.
- * @output: A buffer_t struct containing a buffer.
- * @args: A va_list of arguments.
- *
- * Return: The number of characters stored to output.
- */
-int run_printf(const char *format, va_list args, buffer_t *output)
-{
-	int i, wid, prec, ret = 0;
-	char tmp;
-	unsigned char flags, len;
-	unsigned int (*f)(va_list, buffer_t *,
-			unsigned char, int, int, unsigned char);
-
-	for (i = 0; *(format + i); i++)
-	{
-		len = 0;
-		if (*(format + i) == '%')
-		{
-			tmp = 0;
-			flags = handle_flags(format + i + 1, &tmp);
-			wid = handle_width(args, format + i + tmp + 1, &tmp);
-			prec = handle_precision(args, format + i + tmp + 1,
-					&tmp);
-			len = handle_length(format + i + tmp + 1, &tmp);
-
-			f = handle_specifiers(format + i + tmp + 1);
-			if (f != NULL)
-			{
-				i += tmp + 1;
-				ret += f(args, output, flags, wid, prec, len);
-				continue;
-			}
-			else if (*(format + i + tmp + 1) == '\0')
-			{
-				ret = -1;
-				break;
-			}
-		}
-		ret += _memcpy(output, (format + i), 1);
-		i += (len != 0) ? 1 : 0;
-	}
-	cleanup(args, output);
-	return (ret);
-}
-
-/**
- * _printf - Outputs a formatted string.
- * @format: Character string to print - may contain directives.
+ * print_char - Prints a single character.
+ * @args: The argument list.
  *
  * Return: The number of characters printed.
  */
+int print_char(va_list args)
+{
+	char c = va_arg(args, int);
+
+	write(1, &c, 1);
+	return (1);
+}
+
+/**
+ * print_string - Prints a string.
+ * @args: The argument list.
+ *
+ * Return: The number of characters printed.
+ */
+int print_string(va_list args)
+{
+	char *str = va_arg(args, char *);
+	int i;
+
+	if (!str)
+		str = "(null)";
+
+	for (i = 0; str[i] != '\0'; i++)
+		write(1, &str[i], 1);
+
+	return (i);
+}
+
+/**
+ * print_percent - Prints a percent sign.
+ *
+ * Return: The number of characters printed.
+ */
+int print_percent(void)
+{
+	write(1, "%", 1);
+	return (1);
+}
+
+/**
+ * print_integer - Prints an integer.
+ * @args: The argument list.
+ *
+ * Return: The number of characters printed.
+ */
+int print_integer(va_list args)
+{
+	int num = va_arg(args, int);
+	char buffer[12];
+	int i = 0, j, count = 0;
+
+	if (num < 0)
+	{
+		write(1, "-", 1);
+		num = -num;
+		count++;
+	}
+
+	do {
+		buffer[i++] = (num % 10) + '0';
+		num /= 10;
+	} while (num > 0);
+
+	for (j = i - 1; j >= 0; j--)
+	{
+		write(1, &buffer[j], 1);
+		count++;
+	}
+
+	return (count);
+}
+
+/**
+ * handle_specifier - Handles format specifiers.
+ * @specifier: The format specifier character.
+ * @args: The argument list.
+ *
+ * Return: The number of characters printed.
+ */
+int handle_specifier(char specifier, va_list args)
+{
+	if (specifier == 'c')
+		return (print_char(args));
+	if (specifier == 's')
+		return (print_string(args));
+	if (specifier == '%')
+		return (print_percent());
+	if (specifier == 'd' || specifier == 'i')
+		return (print_integer(args));
+
+	write(1, "%", 1);
+	write(1, &specifier, 1);
+	return (2);
+}
+
+/**
+ * _printf - Produces output according to a format.
+ * @format: A character string containing directives.
+ *
+ * Return: The number of characters printed (excluding null byte),
+ *         or -1 for invalid input.
+ */
 int _printf(const char *format, ...)
 {
-	buffer_t *output;
+	int count = 0;
 	va_list args;
-	int ret;
+	const char *ptr;
 
-	if (format == NULL)
-		return (-1);
-	output = init_buffer();
-	if (output == NULL)
+	if (!format)
 		return (-1);
 
 	va_start(args, format);
 
-	ret = run_printf(format, args, output);
+	for (ptr = format; *ptr != '\0'; ptr++)
+	{
+		if (*ptr == '%')
+		{
+			ptr++;
+			if (*ptr == '\0')
+			{
+				va_end(args);
+				return (-1); /* Invalid: single % at end */
+			}
+			count += handle_specifier(*ptr, args);
+		}
+		else
+		{
+			write(1, ptr, 1);
+			count++;
+		}
+	}
 
-	return (ret);
+	va_end(args);
+
+	return (count);
 }
