@@ -61,6 +61,11 @@ int print_integer(va_list args)
 	if (num < 0)
 	{
 		write(1, "-", 1);
+		if (num == -2147483648)
+		{
+			write(1, "2147483648", 10);
+			return (11);
+		}
 		num = -num;
 		count++;
 	}
