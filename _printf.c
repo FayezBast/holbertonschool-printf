@@ -5,7 +5,8 @@
  * _printf - Produces output according to a format.
  * @format: A character string containing directives.
  *
- * Return: The number of characters printed (excluding null byte).
+ * Return: The number of characters printed (excluding null byte),
+ *         or -1 for invalid input.
  */
 int _printf(const char *format, ...)
 {
@@ -21,6 +22,10 @@ int _printf(const char *format, ...)
     for (ptr = format; *ptr != '\0'; ptr++) {
         if (*ptr == '%') {
             ptr++;
+            if (*ptr == '\0') {
+                va_end(args);
+                return (-1); /* Invalid: single % at end */
+            }
             if (*ptr == 'c') {
                 char c = va_arg(args, int);
                 write(1, &c, 1);
