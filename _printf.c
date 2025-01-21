@@ -46,6 +46,29 @@ int print_percent(void)
 }
 
 /**
+ * handle_specifier - Handles format specifiers.
+ * @specifier: The format specifier character.
+ * @args: The argument list.
+ *
+ * Return: The number of characters printed.
+ */
+int handle_specifier(char specifier, va_list args)
+{
+	if (specifier == 'c')
+		return (print_char(args));
+	else if (specifier == 's')
+		return (print_string(args));
+	else if (specifier == '%')
+		return (print_percent());
+	else
+	{
+		write(1, "%", 1);
+		write(1, &specifier, 1);
+		return (2);
+	}
+}
+
+/**
  * _printf - Produces output according to a format.
  * @format: A character string containing directives.
  *
@@ -73,18 +96,7 @@ int _printf(const char *format, ...)
 				va_end(args);
 				return (-1); /* Invalid: single % at end */
 			}
-			if (*ptr == 'c')
-				count += print_char(args);
-			else if (*ptr == 's')
-				count += print_string(args);
-			else if (*ptr == '%')
-				count += print_percent();
-			else
-			{
-				write(1, "%", 1);
-				write(1, ptr, 1);
-				count += 2;
-			}
+			count += handle_specifier(*ptr, args);
 		}
 		else
 		{
@@ -97,3 +109,4 @@ int _printf(const char *format, ...)
 
 	return (count);
 }
+
